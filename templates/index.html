@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PrepMaster | Home Page</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Prep MasterAI</div>
+    <div class="auth" id="auth">
+      <button id="loginBtn" onclick="handleLogin()">Login</button>
+      <img id="profileIcon" src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png" alt="Profile" style="display:none;" />
+    </div>
+    
+  </nav>
+
+  <header class="hero" data-aos="fade-down">
+    <h1>Empowering Smarter Learning</h1>
+    <p>Your personalized AI mentor to study, revise & practice better!</p>
+  </header>
+
+  <section class="features">
+    <div class="feature-box" data-aos="fade-right">
+      <h2>🧠 AI Tutor</h2>
+      <p>Chat with an intelligent tutor that explains concepts with examples, analogies, and visuals.</p>
+      <!-- <button onclick="redirectToTutor()">Try Now</button> -->
+      <a href="{{ url_for('tutor') }}">
+        <button>Go to AI Tutor</button>
+    </a>
+
+<!-- <script>
+  function redirectToTutor() {
+    window.location.href = "tutor.html"; // Redirects to the AI Tutor page
+  } -->
+</script>
+    </div>
+
+    <div class="feature-box" data-aos="fade-up">
+      <h2>📚 Exam Strategy Planner</h2>
+      <p>Upload notes, get smart summaries, and generate your personalized study roadmap.</p>
+      <a href="{{ url_for('exam') }}">
+        <button>Plan Study</button>
+      </a>
+    </div>
+    
+
+    <div class="feature-box" data-aos="fade-left">
+      <h2>📝 AI Quiz Generator</h2>
+      <p>Practice with auto-generated adaptive quizzes based on your weak areas and syllabus.</p>
+      <!-- <button onclick="alert('Start Quiz')">Start Quiz</button> -->
+      <!-- <a href="/quiz">Go to Quiz Generator</a> -->
+      <a href="{{ url_for('quiz') }}">
+      <button>Generate Quiz</button>
+  </a>
+
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 Prep MasterAI | Crafted with 💙 for learners</p>
+  </footer>
+
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    AOS.init();
+  </script>
+</body>
+</html>

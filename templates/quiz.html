@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Generator | PrepMaster</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #1e293b;
+            color: white;
+            padding: 20px;
+        }
+        h1 {
+            color: #38bdf8;
+        }
+        button {
+            background-color: #38bdf8;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0284c7;
+        }
+        input, select {
+            padding: 10px;
+            margin: 5px;
+            width: 80%;
+            max-width: 400px;
+        }
+        #quizOutput {
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+            background-color: #334155;
+            border-radius: 5px;
+        }
+        .question {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-bottom: 1px solid #475569;
+        }
+        .error {
+            color: red;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AI Quiz Generator</h1>
+    <button onclick="goBack()">⬅ Back</button>
+
+    <form id="quizForm">
+        <label>Upload PDF:</label>
+        <input type="file" id="pdfUpload" accept=".pdf" required><br><br>
+
+        <label>Enter Topic:</label>
+        <input type="text" id="topicInput" required><br><br>
+
+        <label>Select Difficulty:</label>
+        <select id="difficultyInput">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select><br><br>
+
+        <label>Number of Questions:</label>
+        <input type="number" id="numQuestions" min="1" required><br><br>
+
+        <button type="submit">Generate Quiz</button>
+    </form>
+
+    <div id="quizOutput"></div>
+
+    <script>
+        function goBack() {
+            window.location.href = "/";
+        }
+
+        document.getElementById("quizForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const pdfFile = document.getElementById("pdfUpload").files[0];
+            const topic = document.getElementById("topicInput").value.trim();
+            const difficulty = document.getElementById("difficultyInput").value;
+            const numQuestions = document.getElementById("numQuestions").value;
+
+            if (!pdfFile || !topic || !numQuestions) {
+                alert("❌ Please upload a PDF, enter a topic, and select the number of questions.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", pdfFile);
+            formData.append("topic", topic);
+            formData.append("difficulty", difficulty);
+            formData.append("num_questions", numQuestions);
+
+            try {
+                let response = await fetch("/generate-quiz", {
+                    method: "POST",
+                    body: formData,  // Send FormData, not JSON
+                });
+
+                let data = await response.json();
+
+                if (data.error) {
+                    document.getElementById("quizOutput").innerHTML = `<p class="error">${data.error}</p>`;
+                } else {
+                    displayQuiz(data.quiz);  // Only display quiz
+                }
+            } catch (error) {
+                document.getElementById("quizOutput").innerText = "⚠️ Error fetching quiz. Try again!";
+            }
+        });
+
+        function displayQuiz(quiz) {
+            const output = document.getElementById("quizOutput");
+            output.innerHTML = "<h2>Generated Quiz:</h2>";
+
+            quiz.forEach((q, index) => {
+                const questionBlock = document.createElement("div");
+                questionBlock.className = "question";
+                questionBlock.innerHTML = `  
+                    <p><strong>${q.question}</strong></p>
+                    <ul>
+                        <li>A) ${q.options[0]}</li>
+                        <li>B) ${q.options[1]}</li>
+                        <li>C) ${q.options[2]}</li>
+                        <li>D) ${q.options[3]}</li>
+                    </ul>
+                    <hr>
+                `;
+                output.appendChild(questionBlock);
+            });
+        }
+    </script>
+
+</body>
+</html>

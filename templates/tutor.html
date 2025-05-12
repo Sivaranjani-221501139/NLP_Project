@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Tutor - Prep Master</title>
+  <style>
+    body {
+      background-color: #0d1b2a;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .chat-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+    .chat-bubble { max-width: 70%; padding: 15px; border-radius: 12px; line-height: 1.5; }
+    .user { align-self: flex-end; background-color: #0077b6; }
+    .bot { align-self: flex-start; background-color: #1e2a3a; border: 1px solid #ade8f4; }
+    .input-area { display: flex; padding: 15px; background-color: #1e2a3a; border-top: 1px solid #417ac3; }
+    .input-area textarea { flex: 1; background-color: #0d1b2a; color: #f0f0f0; border: 1px solid #417ac3; padding: 10px; border-radius: 8px; resize: none; height: 50px; }
+    .input-area button { background-color: #00b4d8; color: white; border: none; margin-left: 10px; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.3s ease; }
+    .input-area button:hover { background-color: #0077b6; }
+    .navbar { background-color: #1e2a3a; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+    .navbar .logo { font-size: 24px; color: #6cacc5; font-weight: bold; }
+    .navbar .auth button { background-color: transparent; color: #ade8f4; border: 2px solid #ade8f4; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .navbar .auth button:hover { background-color: #ade8f4; color: #3765a1; }
+    .mic-btn { background-color: #00b4d8; color: white; border: none; padding: 10px; border-radius: 50%; margin-left: 8px; cursor: pointer; transition: background 0.3s ease; }
+    .mic-btn:hover { background-color: #0077b6; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Prep MasterAI</div>
+    <div class="auth">
+      <button onclick="goBack()">⬅ Back</button>
+      <script>
+        function goBack() {
+          window.location.href = "{{ url_for('home') }}";
+        }
+      </script>
+      <button onclick="clearChat()">🗑️ Clear Chat</button>
+    </div>
+  </nav>
+
+  <div class="chat-container" id="chatContainer"></div>
+
+  <div class="input-area">
+    <textarea id="userInput" placeholder="Ask your AI Tutor..."></textarea>
+    <button onclick="startListening()" class="mic-btn" title="Speak"><span>🎙️</span></button>
+    <button onclick="askTutor()">Send</button>
+  </div>
+
+  <script>
+    const chatContainer = document.getElementById('chatContainer');
+    const input = document.getElementById('userInput');
+
+    // Clearing the chat 
+    function clearChat() {
+      // Clear the chat container
+      chatContainer.innerHTML = '';
+
+      // Clear chat history from local storage
+      localStorage.removeItem("chatHistory");
+    }
+
+    // ✅ Load chat history
+    window.onload = () => {
+      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      history.forEach(msg => addChatBubble(msg.text, msg.sender));
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    };
+
+    // ✅ Add bubble to chat
+    function addChatBubble(text, sender) {
+      const bubble = document.createElement("div");
+      bubble.className = `chat-bubble ${sender}`;
+      bubble.innerText = text;
+      chatContainer.appendChild(bubble);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // ✅ Save message to history
+    function saveMessage(text, sender) {
+      let history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+
+      history.push({ text, sender });
+
+      // Limit to last 100 messages
+      if (history.length > 100) history = history.slice(history.length - 100);
+
+      try {
+        localStorage.setItem("chatHistory", JSON.stringify(history));
+      } catch (e) {
+        console.warn("Storage full. Clearing history...");
+        localStorage.removeItem("chatHistory");
+      }
+    }
+
+    // ✅ Send message
+    async function askTutor() {
+      const userText = input.value.trim();
+      if (!userText) return;
+
+      input.value = '';
+      input.disabled = true;
+
+      // Save user message
+      saveMessage(userText, 'user');
+      addChatBubble(userText, 'user'); // This line ensures that the user's message is displayed immediately
+
+      const botBubble = document.createElement('div');
+      botBubble.className = 'chat-bubble bot';
+      botBubble.innerText = 'Typing...';
+      chatContainer.appendChild(botBubble);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/ask-tutor", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: userText }),
+        });
+
+        if (!response.ok) throw new Error("Server error");
+        const data = await response.json();
+        botBubble.innerText = data.answer || "No answer received.";
+
+        // Save bot response
+        saveMessage(botBubble.innerText, 'bot');
+
+      } catch (err) {
+        botBubble.innerText = "⚠️ Oops! Something went wrong. Try again.";
+      }
+
+      input.disabled = false;
+    }
+
+    // ✅ Enter key triggers send
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        askTutor();
+      }
+    });
+
+    // ✅ Voice input
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = function (event) {
+        const voiceText = event.results[0][0].transcript;
+        input.value = voiceText;
+      };
+
+      recognition.onerror = function (event) {
+        alert('Voice recognition error: ' + event.error);
+      };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📚 Exam Strategy Planner | PrepMaster</title>
+  <style>
+    /* --- Your Original CSS --- */
+    body {
+      background-color: #0d1b2a;
+      color: #e0e1dd;
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: #1b263b;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #f4f4f4;
+    }
+
+    main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    #messages {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 12px 18px;
+      border-radius: 18px;
+      line-height: 1.5;
+      font-size: 16px;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background-color: #1b263b;
+      align-self: flex-end;
+    }
+
+    .bot {
+      background-color: #415a77;
+      align-self: flex-start;
+    }
+
+    footer {
+      display: flex;
+      padding: 15px;
+      background-color: #1b263b;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .input-container {
+      background: #0d1b2a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 2px solid #415a77;
+      border-radius: 30px;
+      padding: 10px 20px;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    #daysInput {
+      background: transparent;
+      border: 1px solid #415a77;
+      outline: none;
+      color: #fff;
+      font-size: 16px;
+      width: 120px;
+      padding: 12px;
+      border-radius: 10px;
+      transition: 0.3s ease;
+    }
+
+    #daysInput:focus {
+      border-color: #4caf50; /* Green focus color */
+      box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    }
+
+    #uploadLabel {
+      display: inline-block;
+      background-color: #4caf50;
+      padding: 12px 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 16px;
+      color: #fff;
+      text-align: center;
+      transition: 0.3s ease;
+    }
+
+    #uploadLabel:hover {
+      background-color: #45a049;
+    }
+
+    #uploadInput {
+      display: none;
+    }
+
+    /* Typing dots animation */
+    .typing {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      background-color: #e0e1dd;
+      border-radius: 50%;
+      animation: blink 1.4s infinite both;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+      0%, 80%, 100% {
+        opacity: 0;
+      }
+      40% {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>📝 Exam Strategy Planner</header>
+
+<main>
+  <div id="messages"></div>
+</main>
+
+<footer>
+  <div class="input-container">
+    <input type="number" id="daysInput" placeholder="Days left..." min="1">
+    
+    <!-- Updated Label for file upload -->
+    <label for="uploadInput" id="uploadLabel">
+      📤 Upload PDF
+    </label>
+    
+    <input type="file" id="uploadInput" accept="application/pdf">
+  </div>
+</footer>
+
+<script>
+  const daysInput = document.getElementById('daysInput');
+  const uploadInput = document.getElementById('uploadInput');
+  const messagesDiv = document.getElementById('messages');
+
+  // Append a message
+  function appendMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', sender);
+    messageDiv.innerText = text;
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  // Show typing dots
+  function showBotTyping() {
+    const typingDiv = document.createElement('div');
+    typingDiv.classList.add('message', 'bot');
+    typingDiv.id = 'typing';
+    typingDiv.innerHTML = `<div class="typing">
+                              <div class="dot"></div>
+                              <div class="dot"></div>
+                              <div class="dot"></div>
+                            </div>`;
+    messagesDiv.appendChild(typingDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function removeBotTyping() {
+    const typingDiv = document.getElementById('typing');
+    if (typingDiv) {
+      typingDiv.remove();
+    }
+  }
+
+  // Handle file upload
+  uploadInput.addEventListener('change', function() {
+    const file = uploadInput.files[0];
+    const daysLeft = daysInput.value.trim();
+
+    if (!file) {
+      appendMessage('⚠️ Please upload a PDF file.', 'bot');
+      return;
+    }
+    if (!daysLeft) {
+      appendMessage('⚠️ Please enter the number of days left.', 'bot');
+      return;
+    }
+
+    appendMessage(`📄 Uploaded: ${file.name}`, 'user');
+    appendMessage(`📅 Days Left: ${daysLeft}`, 'user');
+
+    showBotTyping();
+
+    // Prepare FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('days_left', daysLeft);
+
+    // Send to backend
+    fetch('/generate-strategy', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      removeBotTyping();
+
+      if (data.strategy) {
+        const cleanedText = data.strategy
+          .replace(/\*\*(.*?)\*\*/g, '$1')  // Removes **bold** markdown
+          .replace(/\*(.*?)\*/g, '$1');    // Removes *italic* markdown
+        appendMessage(cleanedText, 'bot');
+      } else if (data.error) {
+        appendMessage(data.error, 'bot');
+      }
+    })
+    .catch(error => {
+      removeBotTyping();
+      appendMessage('⚠️ Error generating study plan. Try again!', 'bot');
+    });
+  });
+</script>
+
+</body>
+</html>
